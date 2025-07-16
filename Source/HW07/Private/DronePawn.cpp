@@ -85,10 +85,53 @@ void ADronePawn::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	HandleGroundCheck();
+	UpdateRotation(DeltaTime);
+	UpdateMovement(DeltaTime);
+}
+
+void ADronePawn::HandleGroundCheck()
+{
+	FHitResult HitResult;
+	const FVector Start = GetActorLocation();
+	const FVector End = Start - FVector(0.f, 0.f, CapsuleComponent->GetScaledCapsuleHalfHeight() + 15.f);
+	GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility);
+    
+	bIsGrounded = HitResult.bBlockingHit;
+}
+
+void ADronePawn::UpdateRotation(float DeltaTime)
+{
 	const float YawValue = CurrentLookInput.X * RotationSpeed * DeltaTime;
 	const float PitchValue = CurrentLookInput.Y * RotationSpeed * DeltaTime;
 	const float RollValue = CurrentRollInput * RotationSpeed * DeltaTime;
-	AddActorLocalRotation(FRotator(PitchValue, YawValue, RollValue));
+	
+	AddActorLocalRotation(FRotator(PitchValue, YawValue, RollValue), true);
+}
 
-	AddActorLocalOffset(CurrentMoveInput * MoveSpeed * DeltaTime);
+void ADronePawn::UpdateMovement(float DeltaTime)
+{
+	if (bIsGrounded)
+	{
+		if (CurrentMoveInput.Z > 0)
+		{
+			Velocity.Z = CurrentMoveInput.Z * FlySpeed;
+		}
+		else
+		{
+			Velocity.Z = 0;
+		}
+	}
+	else
+	{
+		Velocity.Z += (CurrentMoveInput.Z * FlySpeed + Gravity) * DeltaTime;
+	}
+
+	const FRotator FlatRotation = FRotator(0.f, GetActorRotation().Yaw, 0.f);
+	const FVector ForwardDirection = FRotationMatrix(FlatRotation).GetUnitAxis(EAxis::Y);
+	const FVector RightDirection = FRotationMatrix(FlatRotation).GetUnitAxis(EAxis::X);
+	const FVector HorizontalVelocity = (ForwardDirection * CurrentMoveInput.Y + RightDirection * CurrentMoveInput.X) * MoveSpeed;
+	const FVector FinalVelocity = HorizontalVelocity + FVector(0.f, 0.f, Velocity.Z);
+    
+	AddActorWorldOffset(FinalVelocity * DeltaTime, true);
 }

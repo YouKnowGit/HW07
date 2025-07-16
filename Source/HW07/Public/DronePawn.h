@@ -58,11 +58,17 @@ private:
 
 	// --- Movements ---
 	UPROPERTY(EditAnywhere, Category = "Movement")
-	float MoveSpeed = 500.f;
+	float MoveSpeed = 600.f;
+	UPROPERTY(EditAnywhere, Category = "Movement")
+	float FlySpeed = 1200.f;
 	UPROPERTY(EditAnywhere, Category = "Movement")
 	float RotationSpeed = 100.f;
+	UPROPERTY(EditAnywhere, Category = "Gravity")
+	float Gravity = -980.f;
 	
-	// --- Internal values ---
+	// --- Internal Values ---
+	bool bIsGrounded = true;
+	FVector Velocity = FVector::ZeroVector;
 	FVector CurrentMoveInput;
     FVector2D CurrentLookInput;
     float CurrentRollInput = 0.f;
@@ -71,4 +77,8 @@ private:
 	void Look(const FInputActionValue& Value);
 	void Fly(const FInputActionValue& Value);
 	void Roll(const FInputActionValue& Value);
+
+	void HandleGroundCheck();
+	void UpdateRotation(float DeltaTime);
+	void UpdateMovement(float DeltaTime);
 };
